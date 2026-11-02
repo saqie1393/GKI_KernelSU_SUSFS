@@ -14,7 +14,7 @@ inputs:
   awg_ref:
     description: "AmneziaWG kernel module git ref (tag/branch/commit)"
     required: false
-    default: "master"
+    default: "v1.0.20260725"   # 6.1 kernel ke liye 2.0 line
 
 runs:
   using: composite

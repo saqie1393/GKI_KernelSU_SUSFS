@@ -14,7 +14,7 @@ inputs:
   awg_ref:
     description: "AmneziaWG kernel module git ref (tag/branch/commit)"
     required: false
-    default: "v1.0.20260725"   # 2.0 line; 3.0 needs kernel 6.7+
+    default: "master"
 
 runs:
   using: composite
@@ -23,7 +23,6 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
-        # Advanced-WG fork: fixes crashes + supports Linux 5.4..7.2
         git clone --depth=1 --branch "${{ inputs.awg_ref }}" \
           https://github.com/Advanced-WG/amneziawg-linux-kernel-module-awg.git \
           "${RUNNER_TEMP}/amneziawg"
@@ -36,9 +35,8 @@ runs:
         KERNEL_SRC="${GITHUB_WORKSPACE}/kernel_platform/common"
         DEST="${KERNEL_SRC}/drivers/net/amneziawg"
         mkdir -p "$DEST"
-        # Copy module sources (exclude git + packaging junk)
-        rsync -a --exclude='.git' --exclude='*.md' \
-          "${RUNNER_TEMP}/amneziawg/" "$DEST/"
+        cp -r "${RUNNER_TEMP}/amneziawg/." "$DEST/"
+        rm -rf "${DEST}/.git"
         ls -la "$DEST"
 
     - name: Register module in Kconfig/Makefile
@@ -47,12 +45,10 @@ runs:
         set -euo pipefail
         KERNEL_SRC="${GITHUB_WORKSPACE}/kernel_platform/common"
 
-        # 1) drivers/net/Kconfig -> source the module Kconfig
         if ! grep -q 'amneziawg/Kconfig' "${KERNEL_SRC}/drivers/net/Kconfig"; then
           echo 'source "drivers/net/amneziawg/Kconfig"' >> "${KERNEL_SRC}/drivers/net/Kconfig"
         fi
 
-        # 2) drivers/net/Makefile -> build the module
         if ! grep -q 'amneziawg/' "${KERNEL_SRC}/drivers/net/Makefile"; then
           echo 'obj-$(CONFIG_AMNEZIAWG) += amneziawg/' >> "${KERNEL_SRC}/drivers/net/Makefile"
         fi

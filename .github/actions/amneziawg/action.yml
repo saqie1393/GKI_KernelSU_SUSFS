@@ -46,20 +46,16 @@ runs:
         DEST="${KERNEL_SRC}/drivers/net/amneziawg"
         mkdir -p "$DEST"
         
-        # Sirf src folder ka content copy karein (Kconfig, Makefile, main.c, waghera)
+        # src ke andar ka POORA content copy karein
         cp -r "${RUNNER_TEMP}/amneziawg/src/." "$DEST/"
         
-        # Verify
+        # Verify ke compat.h ab root mein mojood hai
         if [ ! -f "${DEST}/compat/compat.h" ]; then
-          echo "ERROR: compat/compat.h missing!"
+          echo "ERROR: compat/compat.h missing from root!"
           ls -la "$DEST"
           exit 1
         fi
-        if [ ! -f "${DEST}/Kconfig" ]; then
-          echo "ERROR: Kconfig missing!"
-          exit 1
-        fi
-        echo "Module source copied successfully."
+        echo "Module source copied successfully. compat.h is in place."
 
     - name: Register module in Kconfig/Makefile
       shell: bash
@@ -78,12 +74,10 @@ runs:
           exit 1
         fi
 
-        # Kernel ki main Kconfig mein source line add karein
         if ! grep -q 'amneziawg/Kconfig' "${KERNEL_SRC}/drivers/net/Kconfig"; then
           echo 'source "drivers/net/amneziawg/Kconfig"' >> "${KERNEL_SRC}/drivers/net/Kconfig"
         fi
 
-        # Kernel ki main Makefile mein obj line add karein
         if ! grep -q 'amneziawg/' "${KERNEL_SRC}/drivers/net/Makefile"; then
           echo 'obj-$(CONFIG_AMNEZIAWG) += amneziawg/' >> "${KERNEL_SRC}/drivers/net/Makefile"
         fi

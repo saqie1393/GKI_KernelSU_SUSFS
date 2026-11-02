@@ -35,26 +35,34 @@ runs:
         set -euo pipefail
         
         # Auto-detect kernel source directory
-        if [ -d "${GITHUB_WORKSPACE}/kernel_platform/common/drivers/net" ]; then
-          KERNEL_SRC="${GITHUB_WORKSPACE}/kernel_platform/common"
-        elif [ -d "${GITHUB_WORKSPACE}/kernel/common/drivers/net" ]; then
+        if [ -d "${GITHUB_WORKSPACE}/kernel/common/drivers/net" ]; then
           KERNEL_SRC="${GITHUB_WORKSPACE}/kernel/common"
+        elif [ -d "${GITHUB_WORKSPACE}/kernel_platform/common/drivers/net" ]; then
+          KERNEL_SRC="${GITHUB_WORKSPACE}/kernel_platform/common"
         elif [ -d "${GITHUB_WORKSPACE}/common/drivers/net" ]; then
           KERNEL_SRC="${GITHUB_WORKSPACE}/common"
         elif [ -d "${GITHUB_WORKSPACE}/kernel/drivers/net" ]; then
           KERNEL_SRC="${GITHUB_WORKSPACE}/kernel"
         else
-          echo "ERROR: Kernel source directory not found. Listing workspace:"
-          ls -la "${GITHUB_WORKSPACE}"
+          echo "ERROR: Kernel source directory not found."
           exit 1
         fi
         
         echo "Using KERNEL_SRC: $KERNEL_SRC"
         DEST="${KERNEL_SRC}/drivers/net/amneziawg"
         mkdir -p "$DEST"
-        cp -r "${RUNNER_TEMP}/amneziawg/src/." "$DEST/"
-        ls -la "$DEST"
-
+        
+        # POORA repository copy karein (src ke sath sath compat bhi)
+        cp -r "${RUNNER_TEMP}/amneziawg/." "$DEST/"
+        rm -rf "${DEST}/.git"
+        
+        # Verify ke compat.h mojood hai
+        if [ ! -f "${DEST}/compat/compat.h" ]; then
+          echo "ERROR: compat/compat.h still missing!"
+          ls -la "${DEST}"
+          exit 1
+        fi
+        echo "compat/compat.h found. Module source copied successfully."
     - name: Register module in Kconfig/Makefile
       shell: bash
       run: |

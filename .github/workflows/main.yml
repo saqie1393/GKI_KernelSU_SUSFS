@@ -129,6 +129,10 @@ on:
         description: "Render release notes preview only (skip all builds + release)"
         type: boolean
         default: false
+      use_amneziawg:
+        description: "AmneziaWG"
+        type: boolean
+        default: true
   # schedule:  # nightly automatic builds disabled - user opt-in via workflow_dispatch only
   #   - cron: "0 5 * * 1" # Monday 12am EST (5am UTC)
 
@@ -495,16 +499,17 @@ jobs:
           # empty strings, not true - so read them with schedule defaults:
           # every feature ON (matching the dispatch defaults) except Perf,
           # which is opt-in on dispatch and stays off for nightlies.
-          if [ "${{ github.event_name }}" = "schedule" ]; then
+                   if [ "${{ github.event_name }}" = "schedule" ]; then
             F_SUSFS=true;  F_NOMOUNT=true; F_BBG=true;  F_NET=true
             F_DS=true;     F_NTSYNC=true;  F_PTRACE=true; F_UNICODE=true
-            F_BPF=true;    F_PERF=false
+            F_BPF=true;    F_PERF=false;   F_AMNEZIAWG=true
           else
             F_SUSFS="${{ inputs.use_susfs }}";   F_NOMOUNT="${{ inputs.use_nomount }}"
             F_BBG="${{ inputs.use_bbg }}";        F_NET="${{ inputs.use_net }}"
             F_DS="${{ inputs.use_ds }}";          F_NTSYNC="${{ inputs.use_ntsync }}"
             F_PTRACE="${{ inputs.use_ptrace }}";  F_UNICODE="${{ inputs.use_unicode }}"
             F_BPF="${{ inputs.use_bpf }}";        F_PERF="${{ inputs.use_perf }}"
+            F_AMNEZIAWG="${{ inputs.use_amneziawg }}"
           fi
 
           FEATURES=""
@@ -518,6 +523,7 @@ jobs:
           [ "$F_UNICODE" = "true" ] && FEATURES="${FEATURES}Unicode+"
           [ "$F_BPF" = "true" ] && FEATURES="${FEATURES}BPF+"
           [ "$F_PERF" = "true" ] && FEATURES="${FEATURES}Perf+"
+          [ "$F_AMNEZIAWG" = "true" ] && FEATURES="${FEATURES}AmneziaWG+"
           echo "feature_set=${FEATURES%+}" >> "$GITHUB_OUTPUT"
 
       - name: Clone shared source repos once

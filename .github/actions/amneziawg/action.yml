@@ -14,7 +14,7 @@ inputs:
   awg_ref:
     description: "AmneziaWG kernel module git ref (tag/branch/commit)"
     required: false
-    default: "v1.0.20260725"   # 6.1 kernel ke liye 2.0 line
+    default: "v1.0.20260725"   # 6.1 kernel ke liye AmneziaWG 2.0 line
 
 runs:
   using: composite
@@ -23,8 +23,9 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
+        # Original AmneziaWG repository istemal ho rahi hai
         git clone --depth=1 --branch "${{ inputs.awg_ref }}" \
-          https://github.com/Advanced-WG/amneziawg-linux-kernel-module-awg.git \
+          https://github.com/amnezia-vpn/amneziawg-linux-kernel-module.git \
           "${RUNNER_TEMP}/amneziawg"
         echo "AmneziaWG checked out at: $(git -C "${RUNNER_TEMP}/amneziawg" rev-parse HEAD)"
 

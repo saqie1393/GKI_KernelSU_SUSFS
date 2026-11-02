@@ -1,20 +1,16 @@
 name: AmneziaWG
-description: "Integrate AmneziaWG kernel module (out-of-tree) into the GKI source tree"
+description: "Integrate AmneziaWG kernel module into GKI source tree"
 
 inputs:
   version:
-    description: "GKI family, e.g. android14-6.1"
     required: true
   kernel_version:
-    description: "Kernel version, e.g. 6.1"
     required: true
   sublevel:
-    description: "Kernel sublevel, e.g. 138"
     required: true
   awg_ref:
-    description: "AmneziaWG kernel module git ref (tag/branch/commit)"
     required: false
-    default: "v1.0.20260725"   # 6.1 kernel ke liye AmneziaWG 2.0 line
+    default: "v1.0.20260725"
 
 runs:
   using: composite
@@ -23,7 +19,6 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
-        # Original AmneziaWG repository istemal ho rahi hai
         git clone --depth=1 --branch "${{ inputs.awg_ref }}" \
           https://github.com/amnezia-vpn/amneziawg-linux-kernel-module.git \
           "${RUNNER_TEMP}/amneziawg"
@@ -34,7 +29,6 @@ runs:
       run: |
         set -euo pipefail
         
-        # Auto-detect kernel source directory
         if [ -d "${GITHUB_WORKSPACE}/kernel/common/drivers/net" ]; then
           KERNEL_SRC="${GITHUB_WORKSPACE}/kernel/common"
         elif [ -d "${GITHUB_WORKSPACE}/kernel_platform/common/drivers/net" ]; then
@@ -52,26 +46,30 @@ runs:
         DEST="${KERNEL_SRC}/drivers/net/amneziawg"
         mkdir -p "$DEST"
         
-        # POORA repository copy karein
-        cp -r "${RUNNER_TEMP}/amneziawg/." "$DEST/"
-        rm -rf "${DEST}/.git"
+        # Sirf src folder ka content copy karein (Kconfig, Makefile, main.c, waghera)
+        cp -r "${RUNNER_TEMP}/amneziawg/src/." "$DEST/"
         
-        # Verify ke compat.h mojood hai (ab src/ ke andar check karein)
-        if [ ! -f "${DEST}/src/compat/compat.h" ]; then
-          echo "ERROR: src/compat/compat.h still missing!"
-          ls -la "${DEST}"
+        # Verify
+        if [ ! -f "${DEST}/compat/compat.h" ]; then
+          echo "ERROR: compat/compat.h missing!"
+          ls -la "$DEST"
           exit 1
         fi
-        echo "src/compat/compat.h found. Module source copied successfully."
+        if [ ! -f "${DEST}/Kconfig" ]; then
+          echo "ERROR: Kconfig missing!"
+          exit 1
+        fi
+        echo "Module source copied successfully."
+
     - name: Register module in Kconfig/Makefile
       shell: bash
       run: |
         set -euo pipefail
         
-        if [ -d "${GITHUB_WORKSPACE}/kernel_platform/common/drivers/net" ]; then
-          KERNEL_SRC="${GITHUB_WORKSPACE}/kernel_platform/common"
-        elif [ -d "${GITHUB_WORKSPACE}/kernel/common/drivers/net" ]; then
+        if [ -d "${GITHUB_WORKSPACE}/kernel/common/drivers/net" ]; then
           KERNEL_SRC="${GITHUB_WORKSPACE}/kernel/common"
+        elif [ -d "${GITHUB_WORKSPACE}/kernel_platform/common/drivers/net" ]; then
+          KERNEL_SRC="${GITHUB_WORKSPACE}/kernel_platform/common"
         elif [ -d "${GITHUB_WORKSPACE}/common/drivers/net" ]; then
           KERNEL_SRC="${GITHUB_WORKSPACE}/common"
         elif [ -d "${GITHUB_WORKSPACE}/kernel/drivers/net" ]; then
@@ -80,14 +78,17 @@ runs:
           exit 1
         fi
 
+        # Kernel ki main Kconfig mein source line add karein
         if ! grep -q 'amneziawg/Kconfig' "${KERNEL_SRC}/drivers/net/Kconfig"; then
           echo 'source "drivers/net/amneziawg/Kconfig"' >> "${KERNEL_SRC}/drivers/net/Kconfig"
         fi
 
+        # Kernel ki main Makefile mein obj line add karein
         if ! grep -q 'amneziawg/' "${KERNEL_SRC}/drivers/net/Makefile"; then
           echo 'obj-$(CONFIG_AMNEZIAWG) += amneziawg/' >> "${KERNEL_SRC}/drivers/net/Makefile"
         fi
         echo "Successfully registered AmneziaWG in kernel build system."
+
     - name: Enable AmneziaWG in kernel config
       shell: bash
       run: |

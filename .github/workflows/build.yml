@@ -333,7 +333,14 @@ jobs:
           sublevel: ${{ steps.extract.outputs.sublevel }}
           os_patch_level: ${{ inputs.os_patch_level }}
           droidspaces_commit: ${{ inputs.droidspaces_commit }}
-
+      - name: AmneziaWG Module
+        if: contains(inputs.feature_set, 'AmneziaWG') || inputs.feature_set == 'All'
+        uses: ./.github/actions/amneziawg
+        with:
+          version: ${{ inputs.version }}
+          kernel_version: ${{ inputs.kernel_version }}
+          sublevel: ${{ steps.extract.outputs.sublevel }}
+      
       - name: Apply NTSync Patches
         if: contains(inputs.feature_set, 'NTSync')
         uses: ./.github/actions/ntsync

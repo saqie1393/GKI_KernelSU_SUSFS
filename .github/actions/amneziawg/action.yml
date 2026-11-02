@@ -52,17 +52,17 @@ runs:
         DEST="${KERNEL_SRC}/drivers/net/amneziawg"
         mkdir -p "$DEST"
         
-        # POORA repository copy karein (src ke sath sath compat bhi)
+        # POORA repository copy karein
         cp -r "${RUNNER_TEMP}/amneziawg/." "$DEST/"
         rm -rf "${DEST}/.git"
         
-        # Verify ke compat.h mojood hai
-        if [ ! -f "${DEST}/compat/compat.h" ]; then
-          echo "ERROR: compat/compat.h still missing!"
+        # Verify ke compat.h mojood hai (ab src/ ke andar check karein)
+        if [ ! -f "${DEST}/src/compat/compat.h" ]; then
+          echo "ERROR: src/compat/compat.h still missing!"
           ls -la "${DEST}"
           exit 1
         fi
-        echo "compat/compat.h found. Module source copied successfully."
+        echo "src/compat/compat.h found. Module source copied successfully."
     - name: Register module in Kconfig/Makefile
       shell: bash
       run: |

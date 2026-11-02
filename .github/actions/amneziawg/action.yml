@@ -33,18 +33,44 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
-        KERNEL_SRC="${GITHUB_WORKSPACE}/kernel_platform/common"
+        
+        # Auto-detect kernel source directory
+        if [ -d "${GITHUB_WORKSPACE}/kernel_platform/common/drivers/net" ]; then
+          KERNEL_SRC="${GITHUB_WORKSPACE}/kernel_platform/common"
+        elif [ -d "${GITHUB_WORKSPACE}/kernel/common/drivers/net" ]; then
+          KERNEL_SRC="${GITHUB_WORKSPACE}/kernel/common"
+        elif [ -d "${GITHUB_WORKSPACE}/common/drivers/net" ]; then
+          KERNEL_SRC="${GITHUB_WORKSPACE}/common"
+        elif [ -d "${GITHUB_WORKSPACE}/kernel/drivers/net" ]; then
+          KERNEL_SRC="${GITHUB_WORKSPACE}/kernel"
+        else
+          echo "ERROR: Kernel source directory not found. Listing workspace:"
+          ls -la "${GITHUB_WORKSPACE}"
+          exit 1
+        fi
+        
+        echo "Using KERNEL_SRC: $KERNEL_SRC"
         DEST="${KERNEL_SRC}/drivers/net/amneziawg"
         mkdir -p "$DEST"
-        cp -r "${RUNNER_TEMP}/amneziawg/." "$DEST/"
-        rm -rf "${DEST}/.git"
+        cp -r "${RUNNER_TEMP}/amneziawg/src/." "$DEST/"
         ls -la "$DEST"
 
     - name: Register module in Kconfig/Makefile
       shell: bash
       run: |
         set -euo pipefail
-        KERNEL_SRC="${GITHUB_WORKSPACE}/kernel_platform/common"
+        
+        if [ -d "${GITHUB_WORKSPACE}/kernel_platform/common/drivers/net" ]; then
+          KERNEL_SRC="${GITHUB_WORKSPACE}/kernel_platform/common"
+        elif [ -d "${GITHUB_WORKSPACE}/kernel/common/drivers/net" ]; then
+          KERNEL_SRC="${GITHUB_WORKSPACE}/kernel/common"
+        elif [ -d "${GITHUB_WORKSPACE}/common/drivers/net" ]; then
+          KERNEL_SRC="${GITHUB_WORKSPACE}/common"
+        elif [ -d "${GITHUB_WORKSPACE}/kernel/drivers/net" ]; then
+          KERNEL_SRC="${GITHUB_WORKSPACE}/kernel"
+        else
+          exit 1
+        fi
 
         if ! grep -q 'amneziawg/Kconfig' "${KERNEL_SRC}/drivers/net/Kconfig"; then
           echo 'source "drivers/net/amneziawg/Kconfig"' >> "${KERNEL_SRC}/drivers/net/Kconfig"
@@ -53,7 +79,7 @@ runs:
         if ! grep -q 'amneziawg/' "${KERNEL_SRC}/drivers/net/Makefile"; then
           echo 'obj-$(CONFIG_AMNEZIAWG) += amneziawg/' >> "${KERNEL_SRC}/drivers/net/Makefile"
         fi
-
+        echo "Successfully registered AmneziaWG in kernel build system."
     - name: Enable AmneziaWG in kernel config
       shell: bash
       run: |
